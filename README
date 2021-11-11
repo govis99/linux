@@ -1,9 +1,7 @@
-Linux kernel
-============
+# CMPE283 Assignment 1
 
-There are several guides for kernel developers and users. These guides can
-be rendered in a number of formats, like HTML and PDF. Please read
-Documentation/admin-guide/README.rst first.
+1. For each member in your team, provide 1 paragraph detailing what parts of the lab that member 
+implemented / researched. (You may skip this question if you are doing the lab by yourself).
 
 In order to build the documentation, use ``make htmldocs`` or
 ``make pdfdocs``.  The formatted documentation can also be read online at:
