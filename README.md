@@ -29,7 +29,7 @@ Make sure you see VMX flags and if so you have done it correctly
 - git remote -v
 - cd ..
 - vi cmpe283-1.c
-- cat Mkefile
+- cat Makefile
 - make
 - cd linux
 - uname -a
