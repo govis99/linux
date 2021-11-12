@@ -8,7 +8,7 @@ implemented / researched. (You may skip this question if you are doing the lab b
 skilled in software development but otherwise unfamiliar with the assignment. Good answers to this 
 question will be recipes that someone can follow to reproduce your development steps.
 
-We completed this assignment on VMWARE WORKSTATION 16 Player and install ubuntu 20.04.3
+I completed this assignment on VMWARE WORKSTATION 16 Player and install ubuntu 20.04.3
 Go to machine and click "Edit virtual machine settings" from here we have 16GB of memory with 4 processors
 In setup for nested virtualization:
 Click "Prcoessors"
