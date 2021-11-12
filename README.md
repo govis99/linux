@@ -11,7 +11,7 @@ question will be recipes that someone can follow to reproduce your development s
 I completed this assignment on VMWARE WORKSTATION 16 Player and install ubuntu 20.04.3
 Go to machine and click "Edit virtual machine settings" from here we have 16GB of memory with 4 processors
 In setup for nested virtualization:
-Click "Prcoessors"
+Click "Processors"
 Make sure "Virtualize Intel VT-x/EPT or AMD-V/RVI has a check mark next to it
 
 Verify by typing: cat /proc/cpuinfo
