@@ -66,8 +66,16 @@
 #include "vmx.h"
 #include "x86.h"
 
+
+#include <asm/atomic.h>
+#include <asm/atomic64_64.h>
+#include <asm/msr.h>
+
+
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
+
+
 
 #ifdef MODULE
 static const struct x86_cpu_id vmx_cpu_id[] = {
@@ -5912,17 +5920,26 @@ void dump_vmcs(struct kvm_vcpu *vcpu)
 		       vmcs_read16(VIRTUAL_PROCESSOR_ID));
 }
 
+
+
 /*
  * The guest has exited.  See if we can fix it or if we need userspace
  * assistance.
  */
+//global variable
+extern u32 total_exits;
+
+
+ 
 static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	union vmx_exit_reason exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
 	u16 exit_handler_index;
-
+	
+	total_exits++;
+	
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
 	 * updated. Another good is, in kvm_vm_ioctl_get_dirty_log, before
@@ -5944,8 +5961,10 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		return -EIO;
 
 	/* If guest state is invalid, start emulating */
-	if (vmx->emulation_required)
+	if (vmx->emulation_required) {
+		
 		return handle_invalid_guest_state(vcpu);
+	}
 
 	if (is_guest_mode(vcpu)) {
 		/*
@@ -5968,8 +5987,10 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		 */
 		nested_mark_vmcs12_pages_dirty(vcpu);
 
-		if (nested_vmx_reflect_vmexit(vcpu))
+		if (nested_vmx_reflect_vmexit(vcpu)) {
+			
 			return 1;
+		}
 	}
 
 	if (exit_reason.failed_vmentry) {
@@ -5978,6 +5999,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		vcpu->run->fail_entry.hardware_entry_failure_reason
 			= exit_reason.full;
 		vcpu->run->fail_entry.cpu = vcpu->arch.last_vmentry_cpu;
+		
 		return 0;
 	}
 
@@ -5987,6 +6009,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		vcpu->run->fail_entry.hardware_entry_failure_reason
 			= vmcs_read32(VM_INSTRUCTION_ERROR);
 		vcpu->run->fail_entry.cpu = vcpu->arch.last_vmentry_cpu;
+		
 		return 0;
 	}
 
@@ -6016,6 +6039,8 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		}
 		vcpu->run->internal.data[ndata++] = vcpu->arch.last_vmentry_cpu;
 		vcpu->run->internal.ndata = ndata;
+		
+		
 		return 0;
 	}
 
@@ -6038,24 +6063,38 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		}
 	}
 
-	if (exit_fastpath != EXIT_FASTPATH_NONE)
+	if (exit_fastpath != EXIT_FASTPATH_NONE) {
+		
 		return 1;
+	}
 
 	if (exit_reason.basic >= kvm_vmx_max_exit_handlers)
 		goto unexpected_vmexit;
 #ifdef CONFIG_RETPOLINE
-	if (exit_reason.basic == EXIT_REASON_MSR_WRITE)
+	if (exit_reason.basic == EXIT_REASON_MSR_WRITE) {
+		
 		return kvm_emulate_wrmsr(vcpu);
-	else if (exit_reason.basic == EXIT_REASON_PREEMPTION_TIMER)
+	}
+	else if (exit_reason.basic == EXIT_REASON_PREEMPTION_TIMER) { 
+		
 		return handle_preemption_timer(vcpu);
-	else if (exit_reason.basic == EXIT_REASON_INTERRUPT_WINDOW)
-		return handle_interrupt_window(vcpu);
-	else if (exit_reason.basic == EXIT_REASON_EXTERNAL_INTERRUPT)
+	}
+	else if (exit_reason.basic == EXIT_REASON_INTERRUPT_WINDOW) {
+		
+		return handle_interrupt_window(vcpu);	
+	}
+	else if (exit_reason.basic == EXIT_REASON_EXTERNAL_INTERRUPT) {
+		
 		return handle_external_interrupt(vcpu);
-	else if (exit_reason.basic == EXIT_REASON_HLT)
+	}
+	else if (exit_reason.basic == EXIT_REASON_HLT) {
+		
 		return kvm_emulate_halt(vcpu);
-	else if (exit_reason.basic == EXIT_REASON_EPT_MISCONFIG)
+	}
+	else if (exit_reason.basic == EXIT_REASON_EPT_MISCONFIG) {
+		
 		return handle_ept_misconfig(vcpu);
+	}
 #endif
 
 	exit_handler_index = array_index_nospec((u16)exit_reason.basic,
@@ -6063,6 +6102,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	if (!kvm_vmx_exit_handlers[exit_handler_index])
 		goto unexpected_vmexit;
 
+	
 	return kvm_vmx_exit_handlers[exit_handler_index](vcpu);
 
 unexpected_vmexit:
@@ -6075,13 +6115,24 @@ unexpected_vmexit:
 	vcpu->run->internal.ndata = 2;
 	vcpu->run->internal.data[0] = exit_reason.full;
 	vcpu->run->internal.data[1] = vcpu->arch.last_vmentry_cpu;
+	
+	
 	return 0;
 }
+//global variable
+extern u64 total_cycles;
 
 static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
-{
+{	
+	u64 start_cycle = rdtsc(); //we will be using rdtsc and time how much time is spent in the hypervisor 
+	u64 given_delta; //delta
+	
 	int ret = __vmx_handle_exit(vcpu, exit_fastpath);
-
+	// subtracting end-start which will give delta of number of CPU cycles spent in the hypervisor
+	given_delta = rdtsc() - start_cycle;
+	// add that number to the total time counter that we are keeping track of
+	given_delta = total_cycles + given_delta;
+	
 	/*
 	 * Exit to user space when bus lock detected to inform that there is
 	 * a bus lock in guest.
