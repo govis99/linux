@@ -1230,16 +1230,40 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 }
 EXPORT_SYMBOL_GPL(kvm_cpuid);
 
+
+
+u32 total_exits;
+EXPORT_SYMBOL(total_exits);
+
+u64 total_cycles;
+EXPORT_SYMBOL(total_cycles);
+
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
-
+	
+	
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
 
 	eax = kvm_rax_read(vcpu);
 	ecx = kvm_rcx_read(vcpu);
-	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+	
+	/* Exit Ox4fffffff */
+	if (eax == 0x4fffffff) { //total exits of 0x4FFFFFFF displayed
+		eax = total_exits;
+		printk("CPUID(Ox4FFFFFFF), exits=%d\n", total_exits);
+	} else if (eax == 0x4ffffffe) { //we are using ebx and ecx and we are going to combine ebx+ecx which are two 32-bit registers into one 64 bit register
+	
+	ebx = (total_cycles >> 32);
+	// ecx is lower 32-bit register
+	ecx = (total_cycles);
+	printk("CPUID(Ox4FFFFFFE), total time in vmm:%lld\n", total_cycles);
+	}
+	else
+	{
+		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+	}
 	kvm_rax_write(vcpu, eax);
 	kvm_rbx_write(vcpu, ebx);
 	kvm_rcx_write(vcpu, ecx);
@@ -1247,3 +1271,4 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	return kvm_skip_emulated_instruction(vcpu);
 }
 EXPORT_SYMBOL_GPL(kvm_emulate_cpuid);
+
