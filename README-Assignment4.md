@@ -6,6 +6,12 @@ implemented / researched. (You may skip this question if you are doing the lab b
 
 2. Include a sample of your print of exit count output from dmesg from “with ept” and “without ept”. 
 
+Nested Paging
+<img width="960" alt="Assignment 4 before ept" src="https://user-images.githubusercontent.com/90219670/144963077-e8aba0e2-5a49-424b-92d2-10d2659bdf98.png">
+
+Shadow Paging ept=0
+<img width="959" alt="Assignment 4 after ept=0" src="https://user-images.githubusercontent.com/90219670/144963086-bfa1f43a-e94a-4e4c-9759-6d78ab4ec858.png">
+
 - [ 8406.004522] Printing Exits, exit number 0 exits=8859/n
 - [ 8406.004524] Printing Exits, exit number 1 exits=113015/n
 - [ 8406.004525] Printing Exits, exit number 2 exits=0/n
